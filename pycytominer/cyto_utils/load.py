@@ -7,6 +7,7 @@ import gzip
 import pathlib
 from typing import Any, Union
 
+import narwhals as nw
 import numpy as np
 import pandas as pd
 
@@ -98,9 +99,12 @@ def load_profiles(
         Raised if the provided profile does not exists
     """
 
-    # If already a dataframe, return it
-    if isinstance(profiles, pd.DataFrame):
-        return profiles
+    # If already a dataframe-like object, return it
+    if not isinstance(profiles, (str, pathlib.Path, pathlib.PurePath)):
+        try:
+            return nw.from_native(profiles, eager_only=True).to_native()
+        except Exception:
+            pass
 
     # Check if path exists and load depending on file type
     if isinstance(
@@ -155,15 +159,17 @@ def load_platemap(
     platemap : pd.DataFrame
         pandas DataFrame of profiles
     """
-    if not isinstance(platemap, pd.DataFrame):
+    if isinstance(platemap, pd.DataFrame):
+        # Setting platemap to a copy to prevent column name changes from back-propagating
+        platemap = platemap.copy()
+    elif isinstance(platemap, (str, pathlib.Path, pathlib.PurePath)):
         try:
             delim = infer_delim(platemap)
             platemap = pd.read_csv(platemap, sep=delim)
         except FileNotFoundError:
             raise FileNotFoundError(f"{platemap} platemap file not found")
     else:
-        # Setting platemap to a copy to prevent column name changes from back-propagating
-        platemap = platemap.copy()
+        platemap = nw.from_native(platemap, eager_only=True).to_pandas()
 
     if add_metadata_id:
         platemap.columns = pd.Index([

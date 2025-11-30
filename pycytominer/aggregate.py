@@ -9,6 +9,7 @@ import pandas as pd
 
 from pycytominer.cyto_utils import (
     check_aggregate_operation,
+    convert_to_pandas,
     infer_cp_features,
     output,
 )
@@ -76,6 +77,12 @@ def aggregate(
     # Check that the operation is supported
     operation = check_aggregate_operation(operation)
 
+    conversion = convert_to_pandas(population_df)
+    population_df = conversion.pandas_df
+
+    if subset_data_df is not None:
+        subset_data_df = convert_to_pandas(subset_data_df).pandas_df
+
     # Subset the data to specified samples
     if isinstance(subset_data_df, pd.DataFrame):
         population_df = subset_data_df.merge(
@@ -138,4 +145,4 @@ def aggregate(
             float_format=float_format,
         )
     else:
-        return population_df
+        return conversion.to_native(population_df)

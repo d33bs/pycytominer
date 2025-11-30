@@ -1,5 +1,6 @@
 from .annotate_custom import annotate_cmap, cp_clean
 from .collate import collate
+from .narwhals_utils import convert_to_pandas
 from .cp_image_features import (
     aggregate_fields_count,
     aggregate_image_features,
