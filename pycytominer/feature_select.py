@@ -7,7 +7,7 @@ from typing import Any, Literal, Optional, Union
 import pandas as pd
 
 from pycytominer.cyto_utils import (
-    convert_to_pandas,
+    dataframe_converter,
     drop_outlier_features,
     get_blocklist_features,
     infer_cp_features,
@@ -136,8 +136,7 @@ def feature_select(
 
     # Load Data
     profiles = load_profiles(profiles)
-    profile_conversion = convert_to_pandas(profiles)
-    profiles = profile_conversion.pandas_df
+    profiles, to_native = dataframe_converter(profiles)
 
     if features == "infer":
         features = infer_cp_features(profiles, image_features=image_features)
@@ -213,4 +212,4 @@ def feature_select(
             float_format=float_format,
         )
     else:
-        return profile_conversion.to_native(selected_df)
+        return to_native(selected_df)

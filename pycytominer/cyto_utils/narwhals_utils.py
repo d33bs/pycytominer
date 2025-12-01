@@ -1,20 +1,11 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, Tuple
 
 import narwhals as nw
 from narwhals import Implementation
 import pandas as pd
 
 
-@dataclass
-class DataFrameConversion:
-    pandas_df: pd.DataFrame
-    to_native: Callable[[pd.DataFrame], Any]
-
-
-def convert_to_pandas(df: Any) -> DataFrameConversion:
+def dataframe_converter(df: Any) -> Tuple[pd.DataFrame, Callable[[pd.DataFrame], Any]]:
     """Convert a dataframe-like object to pandas and return a converter back to native."""
 
     narwhals_df = nw.from_native(df, eager_only=True)
@@ -51,4 +42,4 @@ def convert_to_pandas(df: Any) -> DataFrameConversion:
 
         return result_df
 
-    return DataFrameConversion(pandas_df=pandas_df, to_native=to_native)
+    return pandas_df, to_native

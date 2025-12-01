@@ -9,7 +9,7 @@ import pandas as pd
 from pycytominer.aggregate import aggregate
 from pycytominer.cyto_utils import (
     check_consensus_operation,
-    convert_to_pandas,
+    dataframe_converter,
     load_profiles,
     modz,
     output,
@@ -111,8 +111,7 @@ def consensus(
 
     # Load Data
     profiles = load_profiles(profiles)
-    profile_conversion = convert_to_pandas(profiles)
-    profiles = profile_conversion.pandas_df
+    profiles, to_native = dataframe_converter(profiles)
 
     if operation == "modz":
         consensus_df = modz(
@@ -148,4 +147,4 @@ def consensus(
             float_format=float_format,
         )
     else:
-        return profile_conversion.to_native(consensus_df)
+        return to_native(consensus_df)

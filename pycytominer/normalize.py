@@ -7,7 +7,7 @@ from typing import Any, Literal, Optional, Union
 import pandas as pd
 from sklearn.preprocessing import RobustScaler, StandardScaler
 
-from pycytominer.cyto_utils import convert_to_pandas
+from pycytominer.cyto_utils import dataframe_converter
 from pycytominer.cyto_utils.features import infer_cp_features
 from pycytominer.cyto_utils.load import load_profiles
 from pycytominer.cyto_utils.output import output
@@ -134,8 +134,7 @@ def normalize(
 
     # Load Data
     profiles = load_profiles(profiles)
-    profile_conversion = convert_to_pandas(profiles)
-    profiles = profile_conversion.pandas_df
+    profiles, to_native = dataframe_converter(profiles)
 
     # Define which scaler to use
     method = method.lower()
@@ -216,4 +215,4 @@ def normalize(
             float_format=float_format,
         )
     else:
-        return profile_conversion.to_native(normalized)
+        return to_native(normalized)

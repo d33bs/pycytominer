@@ -10,7 +10,7 @@ import pandas as pd
 from pycytominer.cyto_utils import (
     annotate_cmap,
     cp_clean,
-    convert_to_pandas,
+    dataframe_converter,
     infer_cp_features,
     load_platemap,
     load_profiles,
@@ -89,9 +89,8 @@ def annotate(
     profiles = load_profiles(profiles)
     platemap = load_platemap(platemap, add_metadata_id_to_platemap)
 
-    profile_conversion = convert_to_pandas(profiles)
-    profiles = profile_conversion.pandas_df
-    platemap = convert_to_pandas(platemap).pandas_df
+    profiles, to_native = dataframe_converter(profiles)
+    platemap, _ = dataframe_converter(platemap)
 
     annotated = platemap.merge(
         profiles,
@@ -127,7 +126,8 @@ def annotate(
 
     if isinstance(external_metadata, pd.DataFrame):
         # Make a copy of the external metadata to avoid modifying the original dataframe
-        external_metadata = convert_to_pandas(external_metadata).pandas_df.copy()
+        external_metadata, _ = dataframe_converter(external_metadata)
+        external_metadata = external_metadata.copy()
 
         external_metadata.columns = pd.Index([
             f"Metadata_{x}" if not x.startswith("Metadata_") else x
@@ -161,4 +161,4 @@ def annotate(
             float_format=float_format,
         )
     else:
-        return profile_conversion.to_native(annotated)
+        return to_native(annotated)
