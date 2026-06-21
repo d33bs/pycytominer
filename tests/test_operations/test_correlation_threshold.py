@@ -45,6 +45,19 @@ def test_correlation_threshold():
     assert sorted(correlation_threshold_result) == expected_result
 
 
+@pytest.mark.parametrize("method", ["pearson", "spearman", "kendall"])
+def test_correlation_threshold_methods(method):
+    correlation_threshold_result = correlation_threshold(
+        population_df=data_df,
+        features=data_df.columns.tolist(),
+        samples="all",
+        threshold=0.2,
+        method=method,
+    )
+
+    assert correlation_threshold_result == ["x", "y", "zz"]
+
+
 def test_correlation_threshold_uncorrelated():
     correlation_threshold_result = correlation_threshold(
         population_df=data_uncorrelated_df,

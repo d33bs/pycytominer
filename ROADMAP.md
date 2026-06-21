@@ -42,7 +42,7 @@ Windows does not support CSV files (see ([#704](https://github.com/cytomining/py
 
 ### Feature Selection
 
-- [ ] Faster correlation computation ([#633](https://github.com/cytomining/pycytominer/issues/633))
+- [x] Faster correlation computation ([#633](https://github.com/cytomining/pycytominer/issues/633))
 - [ ] Numerical variance filtering ([#656](https://github.com/cytomining/pycytominer/issues/656))
 - [ ] Rename variance thresholding for clarity ([#634](https://github.com/cytomining/pycytominer/issues/634))
 

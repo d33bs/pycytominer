@@ -5,12 +5,13 @@ specified threshold
 
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 from pycytominer.cyto_utils.features import infer_cp_features
 from pycytominer.cyto_utils.util import (
+    _get_correlation_matrix,
     check_correlation_method,
-    get_pairwise_correlation,
 )
 
 
@@ -72,57 +73,29 @@ def correlation_threshold(
     # Subset the DataFrame to only include the features of interest
     population_df = population_df.loc[:, inferred_features]
 
-    # Get correlation matrix and lower triangle of pairwise correlations in long format
-    data_cor_df, pairwise_df = get_pairwise_correlation(
-        population_df=population_df, method=method
-    )
+    data_cor_df = _get_correlation_matrix(population_df, method)
 
     # Get absolute sum of correlation across features
     # The lower the index, the less correlation to the full data frame
     # We want to drop features with highest correlation, so drop higher index
     variable_cor_sum = data_cor_df.abs().sum().sort_values().index
 
-    # And subset to only variable combinations that pass the threshold
-    pairwise_df = pairwise_df.query("correlation > @threshold")
-
-    # Return an empty list if nothing is over correlation threshold
-    if pairwise_df.shape[0] == 0:
-        return []
-
-    # Output the excluded features
-    excluded = pairwise_df.apply(
-        lambda x: determine_high_cor_pair(x, variable_cor_sum), axis="columns"
+    # Find qualifying pairs directly in the lower triangle. This avoids materializing
+    # a long DataFrame and applying a Python callback to every qualifying pair.
+    pair_a_indices, pair_b_indices = np.nonzero(
+        np.tril(data_cor_df.to_numpy() > threshold, k=-1)
     )
 
-    return list(set(excluded.tolist()))
+    if pair_a_indices.size == 0:
+        return []
 
+    # Convert the sorted feature names into an integer rank for vectorized lookup.
+    correlation_ranks = variable_cor_sum.get_indexer(population_df.columns)
+    excluded_indices = np.where(
+        correlation_ranks[pair_a_indices] > correlation_ranks[pair_b_indices],
+        pair_a_indices,
+        pair_b_indices,
+    )
 
-def determine_high_cor_pair(
-    correlation_row: pd.Series, sorted_correlation_pairs: pd.Index
-) -> str:
-    """Select highest correlated variable given a correlation row with columns:
-    ["pair_a", "pair_b", "correlation"]. For use in a pandas.apply().
-
-    Parameters
-    ----------
-    correlation_row : pd.Series
-        Pandas series of the specific feature in the pairwise_df
-    sorted_correlation_pairs : pd.Index
-        A sorted object by total correlative sum to all other features
-
-    Returns
-    -------
-    str
-        The feature that has a lower total correlation sum with all other features
-    """
-
-    pair_a = correlation_row["pair_a"]
-    pair_b = correlation_row["pair_b"]
-
-    if (
-        sorted_correlation_pairs.get_indexer_for(pd.Index([pair_a]))[0]
-        > sorted_correlation_pairs.get_indexer_for(pd.Index([pair_b]))[0]
-    ):
-        return pair_a
-    else:
-        return pair_b
+    # Return each exclusion once, ordered consistently with the input features.
+    return population_df.columns[np.unique(excluded_indices)].tolist()

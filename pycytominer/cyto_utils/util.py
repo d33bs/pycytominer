@@ -377,6 +377,30 @@ def extract_image_features(
     return image_features_df
 
 
+def _get_correlation_matrix(population_df: pd.DataFrame, method: str) -> pd.DataFrame:
+    """Calculate a symmetrical feature correlation matrix.
+
+    Args:
+        population_df: Numeric observations with features in columns.
+        method: Correlation method supported by ``check_correlation_method``.
+
+    Returns:
+        A correlation matrix indexed by the input feature names.
+    """
+    corrected_method = check_correlation_method(method)
+    population_values = population_df.to_numpy()
+    has_nan = np.any(np.isnan(population_values))
+    has_inf = np.any(np.isinf(population_values))
+    if corrected_method == "pearson" and not (has_nan or has_inf):
+        return pd.DataFrame(
+            np.corrcoef(population_values, rowvar=False),
+            index=population_df.columns,
+            columns=population_df.columns,
+        )
+
+    return population_df.corr(method=corrected_method)
+
+
 def get_pairwise_correlation(
     population_df: pd.DataFrame, method: str = "pearson"
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -395,21 +419,7 @@ def get_pairwise_correlation(
         The second is a long format DataFrame of pairwise correlations.
     """
 
-    # Check that the input method is supported
-    corrected_method: Literal["pearson", "kendall", "spearman"] = (
-        check_correlation_method(method)
-    )
-
-    # Get a symmetrical correlation matrix. Use numpy for non NaN/Inf matrices.
-    has_nan = np.any(np.isnan(population_df.values))
-    has_inf = np.any(np.isinf(population_df.values))
-    if corrected_method == "pearson" and not (has_nan or has_inf):
-        pop_names = population_df.columns
-        data_cor_df = pd.DataFrame(
-            np.corrcoef(population_df.transpose()), index=pop_names, columns=pop_names
-        )
-    else:
-        data_cor_df = population_df.corr(method=corrected_method)
+    data_cor_df = _get_correlation_matrix(population_df, method)
 
     # Create a copy of the dataframe to generate upper triangle of zeros
     data_cor_natri_df = data_cor_df.copy()
